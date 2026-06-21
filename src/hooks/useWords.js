@@ -30,6 +30,16 @@ export function useWords(userId) {
     return { data, error }
   }
 
+  const addWords = async (wordList) => {
+    const rows = wordList.map(wordData => ({ ...wordData, user_id: userId }))
+    const { data, error } = await supabase
+      .from('words')
+      .insert(rows)
+      .select()
+    if (!error) setWords(prev => [...(data ?? []), ...prev])
+    return { data, error }
+  }
+
   const updateWord = async (id, updates) => {
     const { data, error } = await supabase
       .from('words')
@@ -64,5 +74,5 @@ export function useWords(userId) {
 
   const dueWords = words.filter(w => new Date(w.next_review) <= new Date())
 
-  return { words, dueWords, loading, addWord, updateWord, deleteWord, reviewWord, refetch: fetch }
+  return { words, dueWords, loading, addWord, addWords, updateWord, deleteWord, reviewWord, refetch: fetch }
 }
