@@ -121,7 +121,20 @@ function PassageCard({ passage, onClick, onDelete }) {
 
 function PassageViewModal({ passage, onClose }) {
   const [showTranslation, setShowTranslation] = useState(false)
+const [selectedWord, setSelectedWord] = useState('')
+const [savedWords, setSavedWords] = useState([])
 
+function handleSelection() {
+  const text = window
+    .getSelection()
+    .toString()
+    .trim()
+
+  if (!text) return
+  if (text.includes(' ')) return
+
+  setSelectedWord(text)
+}
   return (
     <Modal open onClose={onClose} title={passage.title}>
       {/* Toggle */}
@@ -143,14 +156,46 @@ function PassageViewModal({ passage, onClose }) {
       )}
 
       {/* Content */}
-      <div style={{
+      <div onMouseUp={handleSelection} style={{
         background: 'var(--bg-2)', borderRadius: 'var(--radius-md)',
         padding: '20px', maxHeight: '55vh', overflowY: 'auto',
         lineHeight: 1.9, fontSize: 15,
         color: showTranslation ? 'var(--text-0)' : 'var(--text-0)',
       }}>
         {showTranslation && passage.translation ? passage.translation : passage.content}
-      </div>
+      </div> {selectedWord && (
+  <div
+    className="card"
+    style={{
+      marginTop: 12,
+      padding: 12
+    }}
+  >
+    <strong>선택한 단어</strong>
+
+    <div style={{ margin: '8px 0' }}>
+      {selectedWord}
+    </div>
+
+    <button
+      className="btn btn-primary btn-sm"
+      onClick={() => {
+
+        if (savedWords.includes(selectedWord))
+          return
+
+        setSavedWords(prev => [
+          ...prev,
+          selectedWord
+        ])
+
+        setSelectedWord('')
+      }}
+    >
+      단어장 추가
+    </button>
+  </div>
+)}
 
       {passage.source && (
         <p style={{ marginTop: 12, fontSize: 12, color: 'var(--text-2)' }}>출처: {passage.source}</p>
