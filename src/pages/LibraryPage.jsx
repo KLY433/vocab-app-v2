@@ -186,9 +186,7 @@ function PassageViewModal({ passage, userId, onClose }) {
     const rows = await Promise.all(selectedWords.map(async word => {
       let meaning = '뜻 입력 필요'
       try {
-        const info = await getWordInfo(word)
-        console.log("INFO 확인:", word, info)
-meaning = info?.translatedText || '뜻 없음'
+       meaning = await translateText(word)
       } catch (error) {
         console.warn(`Failed to translate word "${word}":`, error)
       }
