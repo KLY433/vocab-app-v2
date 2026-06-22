@@ -54,6 +54,8 @@ export async function translateWithPapago(text) {
   const { data, error } = await supabase.functions.invoke('translate', {
     body: { text, source: 'en', target: 'ko' },
   })
+  console.log('TRANSLATE DATA:', data)
+console.log('TRANSLATE ERROR:', error)
   if (error) throw error
   return data.translatedText
 }
