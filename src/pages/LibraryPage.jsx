@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { useAuthContext, useToast } from '../lib/context'
 import { usePassages } from '../hooks/usePassages'
 import { useWords } from '../hooks/useWords'
-import { translateText } from '../lib/translate'
 import { Modal, Empty, Confirm, PageHeader } from '../components/common/UI'
 import { getWordInfo } from '../lib/dictionary'
+
 const WORD_RE = /^[A-Za-z][A-Za-z'-]*$/
 
 function cleanSelectedWord(text) {
@@ -183,12 +183,19 @@ function PassageViewModal({ passage, userId, onClose }) {
 
     setSaving(true)
     setTranslatingWords(true)
+
     const rows = await Promise.all(selectedWords.map(async word => {
       let meaning = '뜻 입력 필요'
       try {
-       meaning = await translateText(word)
+        const info = await getWordInfo(word)
+        if (info && info.meaning) {
+          meaning = info.meaning
+        } else {
+          meaning = '뜻 없음'
+        }
       } catch (error) {
         console.warn(`Failed to translate word "${word}":`, error)
+        meaning = '오류 발생'
       }
 
       return {
@@ -197,7 +204,8 @@ function PassageViewModal({ passage, userId, onClose }) {
         example: getSentenceForWord(passage.content, word),
       }
     }))
-    console.log("ROWS 확인:", rows)
+    
+    console.log("최종 DB 전송 ROWS 확인:", rows)
     setTranslatingWords(false)
 
     const { error } = await addWords(rows)
