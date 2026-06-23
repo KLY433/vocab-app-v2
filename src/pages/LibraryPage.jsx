@@ -3,7 +3,6 @@ import { useAuthContext, useToast } from '../lib/context'
 import { usePassages } from '../hooks/usePassages'
 import { useWords } from '../hooks/useWords'
 import { Modal, Empty, Confirm, PageHeader } from '../components/common/UI'
-import { getWordInfo } from '../lib/dictionary'
 
 const WORD_RE = /^[A-Za-z][A-Za-z'-]*$/
 
@@ -19,6 +18,26 @@ function getSentenceForWord(content, word) {
 
 function tokenizeText(text) {
   return text.split(/(\s+|[.,!?;:"()[\]{}])/g).filter(Boolean)
+}
+
+// ⭕️ 무료 한글 번역 API를 사용하는 함수로 교체!
+async function getKoreanTranslation(word) {
+  try {
+    // MyMemory 무료 번역 API (영어 -> 한국어)
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ko`
+    )
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const translatedText = data?.responseData?.translatedText
+
+    // API 특성상 뒤에 붙는 불필요한 공백이나 기호 정리
+    return translatedText ? translatedText.trim() : null
+  } catch (err) {
+    console.error('번역 API 에러:', err)
+    return null
+  }
 }
 
 export default function LibraryPage() {
@@ -185,13 +204,12 @@ function PassageViewModal({ passage, userId, onClose }) {
     setTranslatingWords(true)
 
     const rows = await Promise.all(selectedWords.map(async word => {
-      let meaning = '뜻 입력 필요'
+      let meaning = '뜻 없음'
       try {
-        const info = await getWordInfo(word)
-        if (info && info.meaning) {
-          meaning = info.meaning
-        } else {
-          meaning = '뜻 없음'
+        // ⭕️ 새로 만든 한국어 번역 함수를 호출합니다!
+        const translation = await getKoreanTranslation(word)
+        if (translation) {
+          meaning = translation
         }
       } catch (error) {
         console.warn(`Failed to translate word "${word}":`, error)
