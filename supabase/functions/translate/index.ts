@@ -12,45 +12,70 @@ serve(async (req) => {
     })
   }
 
-  const { text, source = 'en', target = 'ko' } = await req.json()
+  const { text } = await req.json()
 
-  const clientId = Deno.env.get('PAPAGO_CLIENT_ID')
-  const clientSecret = Deno.env.get('PAPAGO_CLIENT_SECRET')
+  const apiKey = Deno.env.get('DEEPL_KEY')
 
-  if (!clientId || !clientSecret) {
+  if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: 'Papago credentials not set' }),
+      JSON.stringify({ error: 'DEEPL_KEY not set' }),
       {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers':
-            'authorization, x-client-info, apikey, content-type',
         },
       }
     )
   }
 
-  const res = await fetch('https://openapi.naver.com/v1/papago/n2mt', {
+  const response = await fetch(
+    'https://api-free.deepl.com/v2/translate',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: [text],
+        target_lang: 'KO',
+      }),
+    }
+  )
+
+  const data = await response.json()
+  const response = await fetch(
+  'https://api-free.deepl.com/v2/translate',
+  {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'X-Naver-Client-Id': clientId,
-      'X-Naver-Client-Secret': clientSecret,
-    },
-    body: new URLSearchParams({ source, target, text }),
-  })
-
-  const data = await res.json()
-  const translatedText = data?.message?.result?.translatedText ?? ''
-
-  return new Response(JSON.stringify({ translatedText }), {
-    headers: {
+      Authorization: `DeepL-Auth-Key ${apiKey}`,
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers':
-        'authorization, x-client-info, apikey, content-type',
     },
-  })
+    body: JSON.stringify({
+      text: [text],
+      target_lang: 'KO',
+    }),
+  }
+)
+
+const data = await response.json()
+
+console.log("DEEPL STATUS:", response.status)
+console.log("DEEPL DATA:", JSON.stringify(data))
+
+  return new Response(
+    JSON.stringify({
+      translatedText: data.translations?.[0]?.text || '',
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers':
+          'authorization, x-client-info, apikey, content-type',
+      },
+    }
+  )
 })
